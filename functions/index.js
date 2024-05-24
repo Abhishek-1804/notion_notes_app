@@ -33,6 +33,56 @@ async function findToggleListWithName(notion, blockId, name) {
   return null;
 }
 
+// Function to process notes sequentially
+async function processNotesSequentially(
+  notionApiKey,
+  notionPageId,
+  toggleName,
+  contentArray,
+) {
+  const notion = axios.create({
+    baseURL: "https://api.notion.com/v1/",
+    headers: {
+      Authorization: `Bearer ${notionApiKey}`,
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json",
+    },
+  });
+
+  const toggleListId = await findToggleListWithName(
+    notion,
+    notionPageId,
+    toggleName,
+  );
+  if (!toggleListId) {
+    throw new Error(`Toggle list with name "${toggleName}" not found`);
+  }
+
+  for (const content of contentArray) {
+    if (content) {
+      // Ensure content is not empty
+      await notion.patch(`blocks/${toggleListId}/children`, {
+        children: [
+          {
+            object: "block",
+            type: "numbered_list_item",
+            numbered_list_item: {
+              rich_text: [
+                {
+                  type: "text",
+                  text: {
+                    content: content,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      });
+    }
+  }
+}
+
 // Endpoint to add a single note to a specific toggle list
 app.post("/add-to-toggle", async (req, res) => {
   const { toggleName, content } = req.body;
@@ -47,55 +97,30 @@ app.post("/add-to-toggle", async (req, res) => {
     return res.status(400).send("Missing Notion API Key or Page ID");
   }
 
-  const notion = axios.create({
-    baseURL: "https://api.notion.com/v1/",
-    headers: {
-      Authorization: `Bearer ${notionApiKey}`,
-      "Notion-Version": "2022-06-28",
-      "Content-Type": "application/json",
-    },
-  });
+  const contentArray = content
+    .split(".")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 
-  try {
-    const toggleListId = await findToggleListWithName(
-      notion,
-      notionPageId,
-      toggleName,
-    );
+  // Respond to the client quickly
+  res.status(200).send("Notes are being processed in the background");
 
-    if (!toggleListId) {
-      return res
-        .status(404)
-        .send(`Toggle list with name "${toggleName}" not found`);
+  // Process notes in the background
+  (async () => {
+    try {
+      await processNotesSequentially(
+        notionApiKey,
+        notionPageId,
+        toggleName,
+        contentArray,
+      );
+    } catch (error) {
+      console.error(
+        "Error processing notes:",
+        error.response ? error.response.data : error.message,
+      );
     }
-
-    await notion.patch(`blocks/${toggleListId}/children`, {
-      children: [
-        {
-          object: "block",
-          type: "numbered_list_item",
-          numbered_list_item: {
-            rich_text: [
-              {
-                type: "text",
-                text: {
-                  content: content,
-                },
-              },
-            ],
-          },
-        },
-      ],
-    });
-
-    res.status(200).send(`Content added to toggle list "${toggleName}"`);
-  } catch (error) {
-    console.error(
-      "Error:",
-      error.response ? error.response.data : error.message,
-    );
-    res.status(500).send("Error adding content to toggle list");
-  }
+  })();
 });
 
 // Export the Express app as a Firebase function
