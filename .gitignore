@@ -62,7 +62,8 @@ node_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# dotenv environment variables and ds store file
+.DS_Store
 .env
 
 # Firebase Functions dependencies

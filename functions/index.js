@@ -105,22 +105,19 @@ app.post("/add-to-toggle", async (req, res) => {
   // Respond to the client quickly
   res.status(200).send("Notes are being processed in the background");
 
-  // Process notes in the background
-  (async () => {
-    try {
-      await processNotesSequentially(
-        notionApiKey,
-        notionPageId,
-        toggleName,
-        contentArray,
-      );
-    } catch (error) {
-      console.error(
-        "Error processing notes:",
-        error.response ? error.response.data : error.message,
-      );
-    }
-  })();
+  try {
+    processNotesSequentially(
+      notionApiKey,
+      notionPageId,
+      toggleName,
+      contentArray,
+    );
+  } catch (error) {
+    console.error(
+      "Error processing notes:",
+      error.response ? error.response.data : error.message,
+    );
+  }
 });
 
 // Export the Express app as a Firebase function
