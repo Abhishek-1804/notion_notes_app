@@ -20,8 +20,6 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - app-network
 
   app:
     image: notion-image:prod
@@ -37,9 +35,3 @@ services:
     deploy:
       mode: replicated
       replicas: 3
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
