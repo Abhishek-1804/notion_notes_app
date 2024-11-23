@@ -1,0 +1,45 @@
+services:
+  watchtower:
+    image: containrrr/watchtower
+    command:
+      - "--label-enable"
+      - "--interval"
+      - "30"
+      - "--rolling-restart" 
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  reverse-proxy:
+    image: traefik:v3.1
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-network
+
+  app:
+    image: notion-image:prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.app.entrypoints=http"
+      - "traefik.http.services.app.loadbalancer.server.port=80"
+      - "com.centurylinklabs.watchtower.enable=true"
+    deploy:
+      mode: replicated
+      replicas: 3
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
