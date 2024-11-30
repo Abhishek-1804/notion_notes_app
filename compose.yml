@@ -12,16 +12,19 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   # Traefik reverse proxy for routing traffic to services
-  # Firewall setup on VPS, however, ports exposed via docker bypass iptables (known bug)
   reverse-proxy:
     image: traefik:v3.1
     command:
       # Enable Docker as a provider for Traefik
       - "--providers.docker=true"
+      # For the web ui
+      # - "--api.insecure=true"
       # Only expose explicitly enabled services
       - "--providers.docker.exposedbydefault=false"
     ports:
       - "80:80"
+      # Traefik web ui (enabled by --api.insecure=true)
+      # - "8080:8080" 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -34,11 +37,11 @@ services:
       # Enable Traefik for this service
       - "traefik.enable=true"
       # Route traffic to this service based on path prefix `/`
-      - "traefik.http.routers.app.rule=PathPrefix(`/`)"
-      # Route through Traefik's HTTP entrypoint
+      - "traefik.http.routers.app.rule=PathPrefix(`/add-to-toggle`)"
+      # Tells Traefik which "entrypoint" to use for routing traffic to the app service.
       - "traefik.http.routers.app.entrypoints=http"
-      # Forward traffic to the container's internal port 80
-      - "traefik.http.services.app.loadbalancer.server.port=80"
+      # Forward traffic to the container's internal port 3000
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
       # Disable Watchtower updates for this service
       - "com.centurylinklabs.watchtower.enable=false"
     deploy:

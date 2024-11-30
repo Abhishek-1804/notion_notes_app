@@ -5,6 +5,36 @@ This service allows users to dynamically add notes to toggle lists within their 
 
 ---
 
+## VPS Configuration and Traffic Routing
+
+### Firewall Setup
+- Only the SSH port (`22`) is allowed through the VPS firewall (using UFW):
+  ```bash
+  sudo ufw allow OpenSSH
+  sudo ufw enable
+  ```
+- Port 80 is exposed via Traefik in Docker. **Note:** Ports exposed via Docker bypass the firewall rules (a known issue where Docker overwrites existing iptables). This makes it crucial to ensure Traefik securely handles incoming traffic on exposed ports.
+
+### How Traffic is Routed
+1. **Port 80 (VPS):**
+   - Incoming HTTP requests to port 80 on the VPS are forwarded to the internal port 80 in the Traefik container.
+
+2. **Traefik Configuration:**
+   - Traefik listens for incoming requests on port 80 and reroutes them to the appropriate service based on its routing rules.
+   - Example routing configuration in Traefik for the Notion Notes service:
+     ```yaml
+     labels:
+       # Match requests with the `/add-to-toggle` path
+       - "traefik.http.routers.app.rule=PathPrefix(`/add-to-toggle`)"
+       # Forward the requests to the container's internal port 3000
+       - "traefik.http.services.app.loadbalancer.server.port=3000"
+     ```
+   - Traefik uses this setup to forward traffic to the Express server running inside the `app` container.
+
+3. **Express Server (Container):**
+   - The Express server listens on port 3000 within the container.
+   - Traefik forwards matching HTTP requests to this internal port based on the routing configuration.
+
 ## How to Set It Up
 
 ### 1. Get Your Personal Notion API Key
