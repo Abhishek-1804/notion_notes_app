@@ -22,7 +22,7 @@ services:
       # Only expose explicitly enabled services
       - "--providers.docker.exposedbydefault=false"
     ports:
-      - "80:80"
+      - "3010:80"
       # Traefik web ui (enabled by --api.insecure=true)
       # - "8080:8080" 
     volumes:

@@ -13,14 +13,14 @@ This service allows users to dynamically add notes to toggle lists within their 
   sudo ufw allow OpenSSH
   sudo ufw enable
   ```
-- Port 80 is exposed via Traefik in Docker. **Note:** Ports exposed via Docker bypass the firewall rules (a known issue where Docker overwrites existing iptables). This makes it crucial to ensure Traefik securely handles incoming traffic on exposed ports.
+- Port 3010 is exposed via Traefik in Docker. **Note:** Ports exposed via Docker bypass the firewall rules (a known issue where Docker overwrites existing iptables). This makes it crucial to ensure Traefik securely handles incoming traffic on exposed ports.
 
 ### How Traffic is Routed
-1. **Port 80 (VPS):**
-   - Incoming HTTP requests to port 80 on the VPS are forwarded to the internal port 80 in the Traefik container.
+1. **Port 3010 (VPS):**
+   - Incoming HTTP requests to port 3010 on the VPS are forwarded to the internal port 80 in the Traefik container.
 
 2. **Traefik Configuration:**
-   - Traefik listens for incoming requests on port 80 and reroutes them to the appropriate service based on its routing rules.
+   - Traefik listens for incoming requests on port 3010 and reroutes them to the appropriate service based on its routing rules.
    - Example routing configuration in Traefik for the Notion Notes service:
      ```yaml
      labels:
@@ -56,7 +56,7 @@ This service allows users to dynamically add notes to toggle lists within their 
 
 ### Endpoint
 ```
-http://137.184.143.113/add-to-toggle
+http://137.184.143.113:3010/add-to-toggle
 ```
 
 ### Headers
@@ -77,7 +77,7 @@ Send a JSON object in the following format:
 
 ## Siri Shortcuts Integration
 You can use the following template to create Siri Shortcuts for this service:
-[Notion API Siri Shortcut Template](https://www.icloud.com/shortcuts/e71eef26684443278daddcd153cc5662)
+[Notion API Siri Shortcut Template](https://www.icloud.com/shortcuts/d157129dffff48fca285473d9b394755)
 
 This allows you to easily send notes to your Notion workspace using voice commands.
 
