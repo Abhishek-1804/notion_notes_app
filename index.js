@@ -12,33 +12,29 @@ app.use(helmet());
 
 // Utility function to find the first toggle list with a specific name
 async function findToggleListWithName(notion, blockId, name) {
-  const response = await notion.get(`blocks/${blockId}/children`);
-  for (const block of response.data.results) {
-    if (
-      block.type === "toggle" &&
-      block.toggle.rich_text[0].plain_text === name
-    ) {
-      return block.id;
+  try {
+    const response = await notion.get(`blocks/${blockId}/children`);
+    for (const block of response.data.results) {
+      if (
+        block.type === "toggle" &&
+        block.toggle.rich_text[0].plain_text === name
+      ) {
+        return block.id;
+      }
+      if (block.has_children) {
+        const childToggleId = await findToggleListWithName(notion, block.id, name);
+        if (childToggleId) return childToggleId;
+      }
     }
-    if (block.has_children) {
-      const childToggleId = await findToggleListWithName(
-        notion,
-        block.id,
-        name,
-      );
-      if (childToggleId) return childToggleId;
-    }
+    return null;
+  } catch (error) {
+    console.error("Error in findToggleListWithName:", error.message);
+    throw error;
   }
-  return null;
 }
 
 // Function to process notes sequentially
-async function processNotesSequentially(
-  notionApiKey,
-  notionPageId,
-  toggleName,
-  contentArray,
-) {
+async function processNotesSequentially(notionApiKey, notionPageId, toggleName, contentArray) {
   const notion = axios.create({
     baseURL: "https://api.notion.com/v1/",
     headers: {
@@ -48,37 +44,53 @@ async function processNotesSequentially(
     },
   });
 
-  const toggleListId = await findToggleListWithName(
-    notion,
-    notionPageId,
-    toggleName,
-  );
-  if (!toggleListId) {
-    throw new Error(`Toggle list with name "${toggleName}" not found`);
-  }
+  // Add Axios interceptors for debugging
+  notion.interceptors.request.use((request) => {
+    console.log("Starting Request:", request);
+    return request;
+  });
 
-  for (const content of contentArray) {
-    if (content) {
-      // Ensure content is not empty
-      await notion.patch(`blocks/${toggleListId}/children`, {
-        children: [
-          {
-            object: "block",
-            type: "numbered_list_item",
-            numbered_list_item: {
-              rich_text: [
-                {
-                  type: "text",
-                  text: {
-                    content: content,
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      });
+  notion.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      console.error("Axios Error:", error.response ? error.response.data : error.message);
+      return Promise.reject(error);
     }
+  );
+
+  try {
+    const toggleListId = await findToggleListWithName(notion, notionPageId, toggleName);
+    if (!toggleListId) {
+      throw new Error(`Toggle list with name "${toggleName}" not found`);
+    }
+
+    for (const content of contentArray) {
+      if (content) {
+        try {
+          await notion.patch(`blocks/${toggleListId}/children`, {
+            children: [
+              {
+                object: "block",
+                type: "numbered_list_item",
+                numbered_list_item: {
+                  rich_text: [
+                    {
+                      type: "text",
+                      text: { content: content },
+                    },
+                  ],
+                },
+              },
+            ],
+          });
+        } catch (error) {
+          console.error("Error adding content to Notion:", error.message);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error in processNotesSequentially:", error.message);
+    throw error;
   }
 }
 
@@ -105,17 +117,9 @@ app.post("/add-to-toggle", async (req, res) => {
   res.status(200).send("Notes are being processed in the background");
 
   try {
-    processNotesSequentially(
-      notionApiKey,
-      notionPageId,
-      toggleName,
-      contentArray,
-    );
+    await processNotesSequentially(notionApiKey, notionPageId, toggleName, contentArray);
   } catch (error) {
-    console.error(
-      "Error processing notes:",
-      error.response ? error.response.data : error.message,
-    );
+    console.error("Unhandled error in /add-to-toggle endpoint:", error.message);
   }
 });
 
