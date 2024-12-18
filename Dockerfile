@@ -1,15 +1,17 @@
-FROM registry.access.redhat.com/ubi8/nodejs-16:latest
+# Use a lightweight Node.js image
+FROM node:16-alpine
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json, package-lock.json and index.js
+# Copy package.json and package-lock.json
 COPY package*.json ./
-COPY index.js ./ 
 
-# Install npm production packages 
-RUN npm install
+# Install npm production packages
+RUN npm install --production
+
+# Copy the application code
+COPY . .
 
 # Start the application
 CMD ["node", "index.js"]
-
