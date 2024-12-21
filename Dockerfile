@@ -1,17 +1,20 @@
-# Use a lightweight Node.js image
-FROM node:16-alpine
+# Use an official Python lightweight image
+FROM python:3.9-slim
 
-# Set the working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Copy requirements first (for better caching)
+COPY requirements.txt .
 
-# Install npm production packages
-RUN npm install --production
+# Install dependencies
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy the rest of the application
 COPY . .
 
+# Expose the application port
+EXPOSE 3000
+
 # Start the application
-CMD ["node", "index.js"]
+CMD ["python3", "app.py"]

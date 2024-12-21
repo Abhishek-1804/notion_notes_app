@@ -1,0 +1,14 @@
+flask
+requests
+openai
+python-dotenv
+gunicorn
+Werkzeug
+urllib3
+certifi
+charset-normalizer
+click
+idna
+itsdangerous
+Jinja2
+MarkupSafe
