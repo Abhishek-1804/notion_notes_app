@@ -12,3 +12,4 @@ idna
 itsdangerous
 Jinja2
 MarkupSafe
+pytest
