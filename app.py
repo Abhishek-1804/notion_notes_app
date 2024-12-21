@@ -87,13 +87,14 @@ def require_api_keys(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        notion_api_key = request.headers.get("notionApiKey")
+        logger.info(f"All headers received: {dict(request.headers)}")
+        notion_api_key = request.headers.get("NOTION-API-KEY")
 
         if not notion_api_key:
             return jsonify(
                 {
-                    "error": "Missing required headers",
-                    "details": "Both notionApiKey",
+                    "error": "Missing API key in headers",
+                    "details": "NOTION-API-KEY",
                 }
             ), 400
 
@@ -226,14 +227,14 @@ def add_to_toggle():
         if not isinstance(content, str):
             return jsonify({"error": "Content must be a string"}), 400
 
-        # If manual mode, we must have notionPageId in the headers
-        if toggle_name != "Use AI" and "notionPageId" not in request.headers:
+        # If manual mode, we must have NOTION-PAGE-ID in the headers
+        if toggle_name != "Use AI" and "NOTION-PAGE-ID" not in request.headers:
             return jsonify(
-                {"error": "Missing notionPageId header for manual mode"}
+                {"error": "Missing NOTION-PAGE-ID header for manual mode"}
             ), 400
 
         content_array = [item.strip() for item in content.split(".") if item.strip()]
-        notion_client = NotionClient(request.headers["notionApiKey"])
+        notion_client = NotionClient(request.headers["NOTION-API-KEY"])
 
         # Start processing in a background thread
         if toggle_name == "Use AI":
@@ -254,7 +255,7 @@ def add_to_toggle():
                 target=process_notes_sequentially,
                 args=(
                     notion_client,
-                    request.headers["notionPageId"],
+                    request.headers["NOTION-PAGE-ID"],
                     toggle_name,
                     content_array,
                     None,  # No toggle_lists needed for manual mode

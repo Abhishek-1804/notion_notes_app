@@ -1,1 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+
+# pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+*.cover
+
+# Environment
 .env
+.venv/
+env/
+venv/
+
+# macOS system files
+.DS_Store

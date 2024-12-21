@@ -75,7 +75,7 @@ http://137.184.143.113:3010/add-to-toggle
 
 Add the following headers:
 
-- `notionApiKey`: Your Notion integration token.
+- `NOTION-API-KEY`: Your Notion integration token.
 
 ### Request Body
 
@@ -83,7 +83,7 @@ Users can choose between two modes:
 
 #### **1. Manual Mode**
 
-- Provide the `notionPageId` in the headers.
+- Provide the `NOTION-PAGE-ID` in the headers.
 - Use the following format for the request body:
 
   ```json
